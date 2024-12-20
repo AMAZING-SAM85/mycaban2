@@ -95,7 +95,7 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Real Estate Connect API",
+    "TITLE": "Mycaban API",
     "DESCRIPTION": "This API just contains basic routes based on the schema",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,  # Optional: Prevent schema serving with the API

@@ -3,6 +3,10 @@ from django.db import models
 from django.utils import timezone
 from django.core.validators import RegexValidator
 from .managers import CustomUserManager
+from django.core.validators import MinValueValidator, MaxValueValidator
+from django.db.models import Avg
+
+
 
 class User(AbstractUser, PermissionsMixin):
     USER_TYPE_CHOICES = (
@@ -45,3 +49,39 @@ class User(AbstractUser, PermissionsMixin):
         
         time_elapsed = timezone.now() - self.otp_created_at
         return time_elapsed.total_seconds() <= 240  # 4 minutes = 240 seconds
+
+
+class Rating(models.Model):
+    rater = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='ratings_given'
+    )
+    rated_user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='ratings_received'
+    )
+    score = models.IntegerField(
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(5)
+        ]
+    )
+    review = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('rater', 'rated_user')
+        ordering = ['-created_at']
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Update user's average rating
+        avg_rating = Rating.objects.filter(
+            rated_user=self.rated_user
+        ).aggregate(Avg('score'))['score__avg']
+        
+        self.rated_user.rating = round(avg_rating, 2)
+        self.rated_user.save()

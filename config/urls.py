@@ -11,6 +11,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/users/', include('users.urls')),
     path('api/properties/', include('properties.urls')),
+    path('api/notifications/', include("notifications.urls")),
+    path('api/admin/', include('staff.urls')),
     path(
         "api/schema/", SpectacularAPIView.as_view(), name="schema"
     ),  # JSON Schema generation

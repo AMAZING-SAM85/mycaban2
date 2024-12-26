@@ -48,12 +48,15 @@ INSTALLED_APPS = [
 
     "rest_framework_simplejwt.token_blacklist",
     "drf_spectacular",
+    'channels',
 
     'rest_framework',
     'corsheaders',
     'django_filters',
     'properties',
     'users',
+    'notifications',
+    'staff',
 ]
 
 MIDDLEWARE = [
@@ -195,3 +198,14 @@ EMAIL_HOST_USER = "smartsubvt@gmail.com"
 EMAIL_HOST_PASSWORD = "pbnkaeseaijjvgxs"
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 print(f"{os.getenv('APPWRITE_ENDPOINT')} {os.getenv('APPWRITE_BUCKET_ID')} {os.getenv('APPWRITE_API_KEY')} {os.getenv('APPWRITE_PROJECT_ID')}")
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
+
+ASGI_APPLICATION = 'config.asgi.application'

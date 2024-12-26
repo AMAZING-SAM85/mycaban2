@@ -4,6 +4,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .models import Property
 from .serializers import PropertySerializer
 from .filters import PropertyFilter
+from notifications.models import Notification
 
 class PropertyViewSet(viewsets.ModelViewSet):
     queryset = Property.objects.all()
@@ -13,8 +14,6 @@ class PropertyViewSet(viewsets.ModelViewSet):
     filterset_class = PropertyFilter
     search_fields = ['title', 'description', 'location']
     ordering_fields = ['price', 'created_at']
-    
+
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
-
-
+        instance = serializer.save(owner=self.request.user)

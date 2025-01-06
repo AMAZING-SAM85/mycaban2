@@ -9,6 +9,7 @@ class AdminUserSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class AdminPropertySerializer(serializers.ModelSerializer):
+    owner = AdminUserSerializer(read_only=True)
     class Meta:
         model = Property
         fields = '__all__'

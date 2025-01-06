@@ -2,6 +2,14 @@ from rest_framework import serializers
 
 from .utils.appwrite import AppwriteHelper
 from .models import Property, PropertyAmenity, PropertyMedia
+from rest_framework import serializers
+from users.models import User
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'phone_number', 'full_name', 'email', 'rating'] 
+
 
 class PropertyAmenitySerializer(serializers.ModelSerializer):
     class Meta:
@@ -21,6 +29,7 @@ class PropertySerializer(serializers.ModelSerializer):
         write_only=True,
         required=False
     )
+    owner = UserSerializer(read_only=True)
     
     class Meta:
         model = Property

@@ -19,6 +19,7 @@ drf-spectacular = "^0.28.0"
 channels = "^4.2.0"
 redis = "^5.2.1"
 websockets = "^14.1"
+gunicorn = "^23.0.0"
 
 
 [build-system]

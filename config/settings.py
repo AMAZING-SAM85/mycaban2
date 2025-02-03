@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'users',
     'notifications',
     'staff',
+    'chat',
 ]
 
 MIDDLEWARE = [
@@ -113,7 +114,6 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -209,3 +209,25 @@ CHANNEL_LAYERS = {
 }
 
 ASGI_APPLICATION = 'config.asgi.application'
+GOOGLE_MAPS_API_KEY = 'your_api_key_here'
+
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
+
+# For production, you might want to use environment variables:
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [(os.getenv('REDIS_HOST', '127.0.0.1'), 
+                      int(os.getenv('REDIS_PORT', 6379)))],
+        },
+    },
+}

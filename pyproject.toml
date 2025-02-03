@@ -20,6 +20,12 @@ channels = "^4.2.0"
 redis = "^5.2.1"
 websockets = "^14.1"
 gunicorn = "^23.0.0"
+pytest = "^8.3.4"
+pytest-django = "^4.9.0"
+requests = "^2.32.3"
+mock = "^5.1.0"
+channels-redis = "^4.2.1"
+django-redis = "^5.4.0"
 
 
 [build-system]

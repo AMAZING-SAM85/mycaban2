@@ -41,7 +41,7 @@ class UserViewSet(viewsets.ModelViewSet):
         elif self.action == 'list':
             permission_classes = [IsAuthenticated]
         else:
-            permission_classes = [IsAdminUser]
+            permission_classes = [IsAuthenticated]
         return [permission() for permission in permission_classes]
 
     @extend_schema(

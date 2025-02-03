@@ -23,6 +23,10 @@ class Property(models.Model):
     price = models.DecimalField(max_digits=12, decimal_places=2)
     size = models.DecimalField(max_digits=10, decimal_places=2)
     location = models.CharField(max_length=200)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+    formatted_address = models.CharField(max_length=255, blank=True, null=True)
+    place_id = models.CharField(max_length=255, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

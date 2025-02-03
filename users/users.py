@@ -81,7 +81,7 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @extend_schema(
-        summary="List users by type",
+        summary="List users by type",  # Added summary
         parameters=[
             OpenApiParameter(
                 name="user_type",
@@ -117,7 +117,7 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @extend_schema(
-        summary="Get top rated users",
+        summary="Get top rated users",  # Added summary
         parameters=[
             OpenApiParameter(
                 name="limit",
@@ -142,3 +142,27 @@ class UserViewSet(viewsets.ModelViewSet):
         
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+    @extend_schema(summary="List users")  # Added summary for list
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(summary="Create user")  # Added summary for create
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @extend_schema(summary="Retrieve user")  # Added summary for retrieve
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @extend_schema(summary="Update user")  # Added summary for update
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @extend_schema(summary="Partial update user")  # Added summary for partial_update
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @extend_schema(summary="Delete user")  # Added summary for destroy
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)

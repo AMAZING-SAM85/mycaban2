@@ -7,15 +7,16 @@ from .serializers import RatingSerializer
 from drf_spectacular.utils import extend_schema, OpenApiParameter, inline_serializer
 from rest_framework import serializers
 
-
+# ffffddbgg 
 class RatingViewSet(viewsets.ModelViewSet):
     """
+    viewset for managing user ratings
     ViewSet for managing user ratings.
     """
     queryset = Rating.objects.all()
     serializer_class = RatingSerializer
     permission_classes = [permissions.IsAuthenticated]
-
+ 
     def get_queryset(self):
         """
         Get all ratings (you can add custom filtering here if needed).

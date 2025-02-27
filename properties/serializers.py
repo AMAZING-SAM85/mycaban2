@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .utils.appwrite import AppwriteHelper
-from .models import Property, PropertyAmenity, PropertyMedia
+from .models import Property, PropertyAmenity, PropertyMedia, PropertyView
 from .utils.geocoding import GeocodingService
 from users.models import User
 
@@ -33,7 +33,7 @@ class PropertySerializer(serializers.ModelSerializer):
     class Meta:
         model = Property
         fields = '__all__'
-        read_only_fields = ['owner', 'latitude', 'longitude', 'formatted_address', 'place_id']
+        read_only_fields = ['owner', 'formatted_address', 'place_id']
 
     def get_location_details(self, obj):
         """Return formatted location details."""
@@ -46,8 +46,16 @@ class PropertySerializer(serializers.ModelSerializer):
             'place_id': obj.place_id
         }
 
-    def _handle_location_data(self, location: str) -> dict:
+    def _handle_location_data(self, location: str, latitude=None, longitude=None) -> dict:
         """Handle geocoding and return location data."""
+        if latitude and longitude:
+            return {
+                'latitude': latitude,
+                'longitude': longitude,
+                'formatted_address': location,
+                'place_id': None  # Place ID can be fetched if needed
+            }
+        
         geocoding_service = GeocodingService()
         location_details = geocoding_service.get_location_details(location)
         
@@ -64,8 +72,10 @@ class PropertySerializer(serializers.ModelSerializer):
         media_files = validated_data.pop('media_files', [])
         amenities_data = validated_data.pop('amenities', [])
         
-        # Handle geocoding
-        location_data = self._handle_location_data(validated_data['location'])
+        # Handle location data
+        latitude = validated_data.pop('latitude', None)
+        longitude = validated_data.pop('longitude', None)
+        location_data = self._handle_location_data(validated_data['location'], latitude, longitude)
         validated_data.update(location_data)
         
         # Create property instance
@@ -95,9 +105,11 @@ class PropertySerializer(serializers.ModelSerializer):
         return property_instance
 
     def update(self, instance, validated_data):
-        # Update geocoding data if location has changed
-        if 'location' in validated_data and validated_data['location'] != instance.location:
-            location_data = self._handle_location_data(validated_data['location'])
+        # Update location data if location, latitude, or longitude has changed
+        if 'location' in validated_data or 'latitude' in validated_data or 'longitude' in validated_data:
+            latitude = validated_data.pop('latitude', instance.latitude)
+            longitude = validated_data.pop('longitude', instance.longitude)
+            location_data = self._handle_location_data(validated_data.get('location', instance.location), latitude, longitude)
             validated_data.update(location_data)
 
         # Handle existing amenities and media updates if needed
@@ -113,3 +125,23 @@ class PropertySerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+
+class DashboardSerializer(serializers.Serializer):
+    current_properties = serializers.IntegerField()
+    sold_properties = serializers.IntegerField()
+    rented_properties = serializers.IntegerField()
+    total_views = serializers.IntegerField()
+    recently_viewed = PropertySerializer(many=True)
+    recent_views = serializers.SerializerMethodField()
+
+    def get_recent_views(self, obj):
+        request = self.context.get('request')
+        recent_views = PropertyView.objects.filter(
+            user=request.user
+        ).select_related('property').order_by('-viewed_at')[:5]
+        
+        return PropertySerializer(
+            [view.property for view in recent_views], 
+            many=True,
+            context={'request': request}
+        ).data

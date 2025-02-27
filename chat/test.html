@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+</head>
+<body>
+    <h1>WebSocket Chat Test</h1>
+    <div id="messages"></div>
+    <input id="message-input" type="text" placeholder="Type a message">
+    <button id="send-button">Send</button>
+
+    <script>
+        // Replace with your authentication token and chat room ID
+        const authToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQwOTExMjk3LCJpYXQiOjE3NDA2NTIwOTcsImp0aSI6ImZjMzQ5MmUxNzEyYjRlMThiNjBiM2E0NTYwYmRiZDFjIiwidXNlcl9pZCI6MX0.M4Onvs9u47ZJqEM8qAlgVmVjidSYAhjxnCdDDEvdVa4';
+        const roomId = '1';
+        
+        const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
+        const wsUrl = `${wsScheme}://${window.location.host}/ws/chat/${roomId}/`;
+        
+        // Create WebSocket connection
+        const socket = new WebSocket(wsUrl);
+        
+        socket.onopen = function(e) {
+            console.log('Connection established');
+            addMessage('Connected to chat room!', 'system');
+        };
+        
+        socket.onmessage = function(event) {
+            console.log('Message received:', event.data);
+            const data = JSON.parse(event.data);
+            
+            if (data.message) {
+                addMessage(`${data.message.sender.full_name}: ${data.message.content}`, 'received');
+            }
+            
+            if (data.error) {
+                addMessage(`Error: ${data.error}`, 'error');
+            }
+        };
+        
+        socket.onclose = function(event) {
+            if (event.wasClean) {
+                addMessage(`Connection closed cleanly, code=${event.code}`, 'system');
+            } else {
+                addMessage('Connection died', 'error');
+            }
+        };
+        
+        socket.onerror = function(error) {
+            addMessage(`Error: ${error.message}`, 'error');
+        };
+        
+        // Send message when button is clicked
+        document.getElementById('send-button').addEventListener('click', function() {
+            const messageInput = document.getElementById('message-input');
+            const message = messageInput.value;
+            
+            if (message) {
+                socket.send(JSON.stringify({
+                    'message': message
+                }));
+                
+                addMessage(`You: ${message}`, 'sent');
+                messageInput.value = '';
+            }
+        });
+        
+        function addMessage(message, type) {
+            const messagesDiv = document.getElementById('messages');
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', type);
+            messageElement.textContent = message;
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+    </script>
+    
+    <style>
+        .message { margin: 10px; padding: 10px; border-radius: 5px; }
+        .sent { background-color: #dcf8c6; text-align: right; }
+        .received { background-color: #f1f0f0; }
+        .system { background-color: #ffeb3b; font-style: italic; }
+        .error { background-color: #ffcdd2; color: #b71c1c; }
+        #messages { height: 300px; overflow-y: auto; border: 1px solid #ccc; }
+    </style>
+</body>
+</html>

@@ -3,6 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
+
+from users.models import User
 from .models import ChatRoom, ChatRoomMember, Message, PropertyInquiry
 from .serializers import (
     ChatRoomSerializer,
@@ -74,6 +76,61 @@ class ChatRoomViewSet(viewsets.ModelViewSet):
         
         serializer = MessageSerializer(message)
         return Response(serializer.data)
+    
+    @extend_schema(
+    summary="Create a direct message chat room",
+    description="Creates a new direct message chat room between the current user and another user.",
+    request={"type": "object", "properties": {"user_id": {"type": "integer"}}}
+    )
+    @action(detail=False, methods=['post'])
+    def create_direct_message(self, request):
+        """
+        Create a direct message chat room between two users.
+        """
+        recipient_id = request.data.get('user_id')
+        
+        if not recipient_id:
+            return Response(
+                {'error': 'Recipient user ID is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            recipient = User.objects.get(id=recipient_id)
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'User not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Check if a DM already exists between these users
+        existing_rooms = ChatRoom.objects.filter(
+            room_type='DIRECT',
+            members__user=request.user
+        ).filter(
+            members__user=recipient
+        ).distinct()
+        
+        if existing_rooms.exists():
+            # Return the existing chat room
+            serializer = self.get_serializer(existing_rooms.first(), context={'request': request})
+            return Response(serializer.data)
+        
+        # Create a new direct message chat room
+        chat_room = ChatRoom.objects.create(room_type='DIRECT')
+        
+        # Add both users as members
+        ChatRoomMember.objects.create(
+            chat_room=chat_room,
+            user=request.user
+        )
+        ChatRoomMember.objects.create(
+            chat_room=chat_room,
+            user=recipient
+        )
+        
+        serializer = self.get_serializer(chat_room, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @extend_schema(summary="List chat rooms")
     def list(self, request, *args, **kwargs):

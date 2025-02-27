@@ -7,7 +7,6 @@ from .serializers import RatingSerializer
 from drf_spectacular.utils import extend_schema, OpenApiParameter, inline_serializer
 from rest_framework import serializers
 
-# ffffddbgg 
 class RatingViewSet(viewsets.ModelViewSet):
     """
     viewset for managing user ratings

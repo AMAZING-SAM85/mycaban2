@@ -70,7 +70,8 @@ class OTPVerificationView(APIView):
                 "properties": {
                     "message": {"type": "string"},
                     "refresh": {"type": "string"},
-                    "access": {"type": "string"}
+                    "access": {"type": "string"},
+                    "user": {"type": "object"}  # Add user information to the response
                 }
             }
         }
@@ -78,7 +79,7 @@ class OTPVerificationView(APIView):
     def post(self, request):
         serializer = OTPVerificationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
+ 
         email = serializer.validated_data['email']
         otp = serializer.validated_data['otp']
 
@@ -103,11 +104,13 @@ class OTPVerificationView(APIView):
         user.save()
 
         refresh = RefreshToken.for_user(user)
+        user_data = UserProfileSerializer(user).data  # Serialize user information
 
         return Response({
             'message': 'Account verified successfully',
             'refresh': str(refresh),
-            'access': str(refresh.access_token)
+            'access': str(refresh.access_token),
+            'user': user_data  # Include user information in the response
         })
 
 class OTPResendView(APIView):

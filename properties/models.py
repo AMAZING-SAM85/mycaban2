@@ -1,6 +1,9 @@
 from django.db import models
 from users.models import User
 
+from django.db import models
+from users.models import User
+
 class Property(models.Model):
     PROPERTY_TYPE_CHOICES = (
         ('HOUSE', 'House'),
@@ -15,6 +18,12 @@ class Property(models.Model):
         ('SHORTLET', 'Shortlet'),
     )
     
+    FURNISHING_CHOICES = (
+        ('FULLY', 'Fully Furnished'),
+        ('SEMI', 'Semi-Furnished'),
+        ('NONE', 'Unfurnished'),
+    )
+
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     description = models.TextField()
@@ -29,6 +38,21 @@ class Property(models.Model):
     place_id = models.CharField(max_length=255, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    views = models.PositiveIntegerField(default=0)
+    is_sold = models.BooleanField(default=False)
+    is_rented = models.BooleanField(default=False)
+    last_viewed = models.DateTimeField(null=True, blank=True)
+    bedrooms = models.PositiveIntegerField(default=1)
+    bathrooms = models.PositiveIntegerField(default=1)
+    toilets = models.PositiveIntegerField(default=1)
+    year_built = models.PositiveIntegerField(null=True, blank=True)
+    has_air_conditioner = models.BooleanField(default=False)
+    furnishing_type = models.CharField(max_length=20, choices=FURNISHING_CHOICES, default='NONE')
+    power_supply = models.BooleanField(default=False)
+    water_supply = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.title
 
 class PropertyAmenity(models.Model):
     property = models.ForeignKey(Property, related_name='amenities', on_delete=models.CASCADE)
@@ -47,3 +71,11 @@ class PropertyMedia(models.Model):
     media_type = models.CharField(max_length=10, choices=MEDIA_TYPE_CHOICES)
     file_url = models.URLField()
     created_at = models.DateTimeField(auto_now_add=True)
+
+class PropertyView(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    property = models.ForeignKey(Property, on_delete=models.CASCADE)
+    viewed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-viewed_at']

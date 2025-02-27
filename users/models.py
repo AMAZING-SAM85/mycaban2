@@ -22,7 +22,7 @@ class User(AbstractUser, PermissionsMixin):
             regex=r'^\+?234\d{10}$', 
             message='Phone number must be in the format +234XXXXXXXXXX'
         )]
-    )
+    ) 
     user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES)
     is_verified = models.BooleanField(default=False)
     rating = models.DecimalField(max_digits=3, decimal_places=2, null=True, blank=True)

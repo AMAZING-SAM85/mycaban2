@@ -1,3 +1,4 @@
+from .models import Schedule
 from rest_framework import serializers
 from .models import ChatRoom, Message, PropertyInquiry, ChatRoomMember
 from users.serializers import UserProfileSerializer
@@ -56,3 +57,28 @@ class PropertyInquirySerializer(serializers.ModelSerializer):
             'status', 'chat_room', 'created_at', 'updated_at'
         ]
         read_only_fields = ['status', 'chat_room']
+
+
+
+class ScheduleSerializer(serializers.ModelSerializer):
+    participants = UserProfileSerializer(many=True, read_only=True)
+    created_by = UserProfileSerializer(read_only=True)
+    status = serializers.ChoiceField(choices=Schedule.STATUS_CHOICES, default='PENDING')
+
+    class Meta:
+        model = Schedule
+        fields = [
+            'id', 'title', 'description', 'location', 
+            'start_time', 'end_time', 'participants',
+            'status', 'created_by', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_by', 'created_at', 'updated_at']
+
+    def validate(self, data):
+        if data['start_time'] >= data['end_time']:
+            raise serializers.ValidationError("End time must be after start time")
+        return data
+
+    def create(self, validated_data):
+        validated_data['created_by'] = self.context['request'].user
+        return super().create(validated_data)

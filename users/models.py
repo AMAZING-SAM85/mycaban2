@@ -31,6 +31,16 @@ class User(AbstractUser, PermissionsMixin):
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
+    receive_email_notifications = models.BooleanField(default=True)
+    allow_listing_updates = models.BooleanField(default=True)
+    message_notifications = models.BooleanField(default=True)
+    review_notifications = models.BooleanField(default=True)
+    viewing_notifications = models.BooleanField(default=True)
+    schedule_reminders = models.BooleanField(default=True)
+    profile_visible = models.BooleanField(default=True)
+    listings_private = models.BooleanField(default=False)
+    login_alerts = models.BooleanField(default=True)
+    phone_verified = models.BooleanField(default=False)
 
     objects = CustomUserManager()
 

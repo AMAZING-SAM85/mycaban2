@@ -196,3 +196,42 @@ class RatingSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data['rater'] = self.context['request'].user
         return super().create(validated_data)
+
+
+class UserSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            'receive_email_notifications',
+            'allow_listing_updates',
+            'message_notifications',
+            'review_notifications',
+            'viewing_notifications',
+            'schedule_reminders',
+            'profile_visible',
+            'listings_private',
+            'login_alerts'
+        ]
+
+class ChangePasswordSerializer(serializers.Serializer):
+    current_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
+    confirm_password = serializers.CharField(required=True)
+
+    def validate(self, data):
+        if data['new_password'] != data['confirm_password']:
+            raise serializers.ValidationError("Passwords do not match")
+        validate_password(data['new_password'])
+        return data
+
+class PhoneVerificationSerializer(serializers.Serializer):
+    phone_number = serializers.CharField(required=True)
+    code = serializers.CharField(required=False)
+
+class GovernmentIDSerializer(serializers.Serializer):
+    document = serializers.FileField(required=True)
+    document_type = serializers.ChoiceField(choices=[
+        ('NIN', 'National Identity Number'),
+        ('DRIVER_LICENSE', 'Driver License'),
+        ('INTERNATIONAL_PASSPORT', 'International Passport')
+    ])

@@ -5,6 +5,7 @@ from .views import (
     OTPVerificationView, 
     OTPResendView, 
     LoginView,
+    UserSettingsViewSet,
 )
 
 from rest_framework.routers import DefaultRouter
@@ -14,6 +15,7 @@ from .rating import RatingViewSet
 router = DefaultRouter()
 router.register('users', UserViewSet)
 router.register('ratings', RatingViewSet, basename='rating')
+router.register('settings', UserSettingsViewSet, basename='user-settings')
 
 urlpatterns = [
     path('register/', UserRegistrationView.as_view(), name='user-registration'),

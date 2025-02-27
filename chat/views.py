@@ -4,6 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
+from django.db import models
 
 from users.models import User
 from .models import ChatRoom, ChatRoomMember, Message, PropertyInquiry
@@ -13,6 +14,11 @@ from .serializers import (
     PropertyInquirySerializer
 )
 from drf_spectacular.utils import extend_schema, OpenApiParameter
+from rest_framework import viewsets, permissions
+from .models import Schedule
+from .serializers import ScheduleSerializer
+from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
 
 class ChatRoomViewSet(viewsets.ModelViewSet):
     """
@@ -230,3 +236,36 @@ class PropertyInquiryViewSet(viewsets.ModelViewSet):
     @extend_schema(summary="Delete property inquiry")
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
+
+
+class ScheduleViewSet(viewsets.ModelViewSet):
+    serializer_class = ScheduleSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['status', 'start_time']
+
+    def get_queryset(self):
+        return Schedule.objects.filter(
+            models.Q(participants=self.request.user) | 
+            models.Q(created_by=self.request.user)
+        ).distinct()
+
+    @action(detail=False, methods=['get'])
+    def upcoming(self, request):
+        queryset = self.filter_queryset(self.get_queryset()).filter(
+            start_time__gte=timezone.now()
+        )
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def add_participant(self, request, pk=None):
+        schedule = self.get_object()
+        user_id = request.data.get('user_id')
+        
+        try:
+            user = User.objects.get(id=user_id)
+            schedule.participants.add(user)
+            return Response({'status': 'participant added'})
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=400)

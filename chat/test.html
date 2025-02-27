@@ -16,7 +16,6 @@
     </div>
     
     <div id="connection-status">Not connected</div>
-    
     <div id="messages"></div>
     <input id="message-input" type="text" placeholder="Type a message">
     <button id="send-button">Send</button>
@@ -43,7 +42,7 @@
             socket.onopen = function(e) {
                 console.log('Connection established');
                 document.getElementById('connection-status').textContent = 'Connected';
-                addMessage('Connected to chat room!', 'system');
+                addMessage('Connected to chat room!', 'system');  ppppppppppppppppppppp 
             };
             
             socket.onmessage = function(event) {

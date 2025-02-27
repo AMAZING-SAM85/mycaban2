@@ -5,53 +5,94 @@
 </head>
 <body>
     <h1>WebSocket Chat Test</h1>
+    
+    <div>
+        <label for="token-select">Select User:</label>
+        <select id="token-select">
+            <option value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQwOTE3NjY1LCJpYXQiOjE3NDA2NTg0NjUsImp0aSI6IjhhNmY5YjQ5ZjA4MDQ5ODQ4NGEzMjYwZjRmNGJiOWZkIiwidXNlcl9pZCI6MX0.BBtYvJZCoiG8xH_Ny3tdJbJ6W_liNp7wLdeiDsqKwvA">Property Owner</option>
+            <option value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQwOTE3NjEyLCJpYXQiOjE3NDA2NTg0MTIsImp0aSI6IjM4YTg5MGY4NmIyYTQ0NTRhNGY2MTZjMjc2ZDZjN2M4IiwidXNlcl9pZCI6Mn0.aLVt0VSNgVRlqPa9phIjoTWAzqqXjE9LAoxd03zWjRQ">Buyer</option>
+        </select>
+        <button id="connect-button">Connect</button>
+    </div>
+    
+    <div id="connection-status">Not connected</div>
+    
     <div id="messages"></div>
     <input id="message-input" type="text" placeholder="Type a message">
     <button id="send-button">Send</button>
 
     <script>
-        // Replace with your authentication token and chat room ID
-        const authToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQwOTExMjk3LCJpYXQiOjE3NDA2NTIwOTcsImp0aSI6ImZjMzQ5MmUxNzEyYjRlMThiNjBiM2E0NTYwYmRiZDFjIiwidXNlcl9pZCI6MX0.M4Onvs9u47ZJqEM8qAlgVmVjidSYAhjxnCdDDEvdVa4';
-        const roomId = '1';
+        let socket = null;
+        const roomId = '1'; // Replace with the actual chat room ID 
         
-        const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
-        const wsUrl = `${wsScheme}://${window.location.host}/ws/chat/${roomId}/`;
-        
-        // Create WebSocket connection
-        const socket = new WebSocket(wsUrl);
-        
-        socket.onopen = function(e) {
-            console.log('Connection established');
-            addMessage('Connected to chat room!', 'system');
-        };
-        
-        socket.onmessage = function(event) {
-            console.log('Message received:', event.data);
-            const data = JSON.parse(event.data);
-            
-            if (data.message) {
-                addMessage(`${data.message.sender.full_name}: ${data.message.content}`, 'received');
+        document.getElementById('connect-button').addEventListener('click', function() {
+            // Close existing connection if any
+            if (socket) {
+                socket.close();
             }
             
-            if (data.error) {
-                addMessage(`Error: ${data.error}`, 'error');
-            }
-        };
+            // Get selected token
+            const token = document.getElementById('token-select').value;
+            
+            // Create WebSocket connection
+            const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
+            const wsUrl = `${wsScheme}://${'localhost:8000'}/ws/chat/${roomId}/?token=${token}`;
+            
+            socket = new WebSocket(wsUrl);
+            
+            socket.onopen = function(e) {
+                console.log('Connection established');
+                document.getElementById('connection-status').textContent = 'Connected';
+                addMessage('Connected to chat room!', 'system');
+            };
+            
+            socket.onmessage = function(event) {
+                console.log('Message received:', event.data);
+                const data = JSON.parse(event.data);
+                
+                // Handle error messages first
+                if (data.error) {
+                    addMessage(`Error: ${data.error}`, 'error');
+                    document.getElementById('connection-status').textContent = 'Error: ' + data.error;
+                    return;
+                }
+                
+                // Handle connection confirmation
+                if (data.type === 'connection_established') {
+                    addMessage(`Connected as user ID: ${data.user_id}`, 'system');
+                    return;
+                }
+                
+                // Handle actual messages
+                if (data.message && data.message.sender && data.message.sender.full_name) {
+                    addMessage(`${data.message.sender.full_name}: ${data.message.content}`, 'received');
+                } else {
+                    console.error('Malformed message:', data);
+                }
+            };
+            
+            socket.onclose = function(event) {
+                document.getElementById('connection-status').textContent = 'Disconnected';
+                if (event.wasClean) {
+                    addMessage(`Connection closed cleanly, code=${event.code}`, 'system');
+                } else {
+                    addMessage('Connection died', 'error');
+                }
+            };
+            
+            socket.onerror = function(error) {
+                document.getElementById('connection-status').textContent = 'Error';
+                addMessage(`Error: ${error.message}`, 'error');
+            };
+        });
         
-        socket.onclose = function(event) {
-            if (event.wasClean) {
-                addMessage(`Connection closed cleanly, code=${event.code}`, 'system');
-            } else {
-                addMessage('Connection died', 'error');
-            }
-        };
-        
-        socket.onerror = function(error) {
-            addMessage(`Error: ${error.message}`, 'error');
-        };
-        
-        // Send message when button is clicked
+        // Send message when button is clicked 
         document.getElementById('send-button').addEventListener('click', function() {
+            if (!socket || socket.readyState !== WebSocket.OPEN) {
+                addMessage('Not connected to chat room!', 'error');
+                return;
+            }
+            
             const messageInput = document.getElementById('message-input');
             const message = messageInput.value;
             
@@ -81,7 +122,8 @@
         .received { background-color: #f1f0f0; }
         .system { background-color: #ffeb3b; font-style: italic; }
         .error { background-color: #ffcdd2; color: #b71c1c; }
-        #messages { height: 300px; overflow-y: auto; border: 1px solid #ccc; }
+        #messages { height: 300px; overflow-y: auto; border: 1px solid #ccc; margin: 10px 0; }
+        #connection-status { padding: 5px; margin: 10px 0; font-weight: bold; }
     </style>
 </body>
 </html>

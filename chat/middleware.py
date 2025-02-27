@@ -3,7 +3,10 @@ from channels.db import database_sync_to_async
 from django.contrib.auth.models import AnonymousUser
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from urllib.parse import parse_qs
+import logging
 
+# Set up logging
+logger = logging.getLogger('django')
 class WebSocketAuthMiddleware(BaseMiddleware):
     async def __call__(self, scope, receive, send):
         # Extract token from the query string.
@@ -38,3 +41,60 @@ class WebSocketAuthMiddleware(BaseMiddleware):
         if token_list:
             return token_list[0]
         return None
+
+
+class TokenAuthMiddleware(BaseMiddleware):
+    """
+    Custom middleware for token-based authentication in WebSockets
+    """
+    
+    async def __call__(self, scope, receive, send):
+        # Extract token from query string
+        query_string = scope.get('query_string', b'').decode()
+        query_params = parse_qs(query_string)
+        
+        # Log query parameters for debugging
+        logger.debug(f"WebSocket query params: {query_params}")
+        
+        token = None
+        if 'token' in query_params:
+            token = query_params['token'][0]
+            # Remove any trailing slashes from token
+            if token.endswith('/'):
+                token = token[:-1]
+        
+        # Set the user in the scope
+        if token:
+            # Authenticate using JWT token
+            user = await self.get_user_from_token(token)
+            if user:
+                scope['user'] = user
+                logger.debug(f"Authenticated user: {user.id}")
+            else:
+                scope['user'] = AnonymousUser()
+                logger.debug("Failed to authenticate user with provided token")
+        else:
+            scope['user'] = AnonymousUser()
+            logger.debug("No token provided, setting AnonymousUser")
+        
+        return await super().__call__(scope, receive, send)
+    
+    @database_sync_to_async
+    def get_user_from_token(self, token):
+        """
+        Get the user associated with the given token
+        """
+        try:
+            # Initialize JWT authentication
+            jwt_auth = JWTAuthentication()
+            
+            # Validate token
+            validated_token = jwt_auth.get_validated_token(token)
+            
+            # Get user from validated token
+            user = jwt_auth.get_user(validated_token)
+            return user
+        except Exception as e:
+            # Log any errors for debugging
+            logger.error(f"Token authentication error: {str(e)}")
+            return None

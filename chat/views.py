@@ -1,3 +1,4 @@
+from datetime import timezone
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -186,26 +187,22 @@ class PropertyInquiryViewSet(viewsets.ModelViewSet):
         request=PropertyInquirySerializer # Add request schema
     )
     def perform_create(self, serializer):
-        """
-        Create a property inquiry and associated chat room.
-        """
         inquiry = serializer.save(inquirer=self.request.user)
         
-        # Create a chat room for this inquiry
-        chat_room = ChatRoom.objects.create(
+        # Create or get existing chat room
+        chat_room, created = ChatRoom.objects.get_or_create(
             room_type='INQUIRY',
-            property=inquiry.property
+            property=inquiry.property,
+            defaults={'created_at': timezone.now()}
         )
         
-        # Add members to chat room
-        ChatRoomMember.objects.create(
-            chat_room=chat_room,
-            user=self.request.user
-        )
-        ChatRoomMember.objects.create(
-            chat_room=chat_room,
-            user=inquiry.property.owner
-        )
+        # Add both users to the chat room
+        for user in [self.request.user, inquiry.property.owner]:
+            ChatRoomMember.objects.get_or_create(
+                chat_room=chat_room,
+                user=user,
+                defaults={'joined_at': timezone.now()}
+            )
         
         inquiry.chat_room = chat_room
         inquiry.save()
